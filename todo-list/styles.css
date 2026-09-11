@@ -1,0 +1,260 @@
+/* ===== 设计变量 ===== */
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-subtle: #fafbfc;
+  --text: #1f2430;
+  --text-muted: #6b7280;
+  --text-faint: #9aa2af;
+  --border: #e3e6ec;
+  --accent: #3b6ef6;
+  --accent-hover: #2f5ad4;
+  --radius: 10px;
+  --ring: 0 0 0 3px rgba(59, 110, 246, 0.3);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 30px rgba(16, 24, 40, 0.07);
+}
+
+/* ===== 基础 ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 40px 20px 64px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei",
+    "PingFang SC", "Hiragino Sans GB", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 仅对屏幕阅读器可见 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip-path: inset(50%);
+}
+
+/* ===== 卡片容器 ===== */
+.app {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 28px 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: var(--shadow);
+}
+
+/* ===== 标题区 ===== */
+.app__header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app__title {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.app__subtitle {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ===== 输入区 ===== */
+.composer {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.composer__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 11px 13px;
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.composer__input::placeholder {
+  color: var(--text-faint);
+}
+
+.composer__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+
+.composer__submit {
+  flex: 0 0 auto;
+  padding: 11px 22px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.composer__submit:hover {
+  background: var(--accent-hover);
+}
+
+.composer__submit:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.composer__submit:active {
+  transform: translateY(1px);
+}
+
+/* ===== 列表区 ===== */
+.list-section {
+  margin-top: 28px;
+}
+
+.list-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.list-section__heading {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.list-section__count {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.todo-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ===== 任务条目 ===== */
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.todo-item:last-child {
+  border-bottom: none;
+}
+
+.todo-item__checkbox {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.todo-item__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.todo-item--done .todo-item__text {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.todo-item__delete {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.todo-item__delete:hover {
+  color: #b42318;
+  background: #fef3f2;
+  border-color: #fecdca;
+}
+
+.todo-item__delete:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* ===== 空状态 ===== */
+.empty-state {
+  margin: 0;
+  padding: 28px 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+  background: var(--surface-subtle);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+/* ===== 窄屏适配 ===== */
+@media (max-width: 480px) {
+  body {
+    padding: 20px 12px 40px;
+  }
+
+  .app {
+    padding: 20px 18px 26px;
+    border-radius: var(--radius);
+  }
+
+  .app__title {
+    font-size: 22px;
+  }
+
+  .composer {
+    gap: 8px;
+  }
+
+  .composer__submit {
+    padding: 11px 16px;
+  }
+}
