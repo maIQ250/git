@@ -6,6 +6,6 @@
   "description": "校园失物招领系统",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test tests/"
+    "test": "node --test \"tests/*.test.js\""
   }
 }
