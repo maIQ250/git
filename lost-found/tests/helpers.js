@@ -6,6 +6,36 @@ import { readConfig } from "../src/config.js";
 import { openDb } from "../src/db.js";
 import { createApp } from "../src/router.js";
 
+/**
+ * 构造 multipart/form-data 请求体。
+ * fields 是普通文本字段，files 的每一项是 { name, filename, contentType, data: Buffer }。
+ */
+export function multipartBody({ fields = {}, files = [], boundary = "----lostfound-test-boundary" } = {}) {
+  const chunks = [];
+
+  for (const [name, value] of Object.entries(fields)) {
+    chunks.push(
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`)
+    );
+  }
+
+  for (const file of files) {
+    chunks.push(
+      Buffer.from(
+        `--${boundary}\r\n` +
+          `Content-Disposition: form-data; name="${file.name}"; filename="${file.filename}"\r\n` +
+          `Content-Type: ${file.contentType}\r\n\r\n`
+      )
+    );
+    chunks.push(file.data);
+    chunks.push(Buffer.from("\r\n"));
+  }
+
+  chunks.push(Buffer.from(`--${boundary}--\r\n`));
+
+  return { body: Buffer.concat(chunks), contentType: `multipart/form-data; boundary=${boundary}` };
+}
+
 export async function startTestServer() {
   const dir = mkdtempSync(path.join(tmpdir(), "lostfound-api-"));
   const config = readConfig({ DB_PATH: path.join(dir, "test.db") });
@@ -20,20 +50,27 @@ export async function startTestServer() {
     db,
     config,
 
-    async request(method, pathname, { body, cookie } = {}) {
+    async request(method, pathname, { body, rawBody, contentType, cookie } = {}) {
       const headers = {};
       let payload;
 
       if (body !== undefined) {
         payload = JSON.stringify(body);
         headers["Content-Type"] = "application/json";
+      } else if (rawBody !== undefined) {
+        payload = rawBody;
+        headers["Content-Type"] = contentType;
       }
       if (cookie) {
         headers.Cookie = cookie;
       }
 
       const response = await fetch(baseUrl + pathname, { method, headers, body: payload });
-      const text = await response.text();
+
+      // 先取二进制再转文本。Fetch 的响应体只能读一次，
+      // 反过来（先 text() 再 arrayBuffer()）会抛 "Body is unusable: Body has already been read"。
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const text = buffer.toString("utf8");
 
       let json = null;
       try {
@@ -48,6 +85,8 @@ export async function startTestServer() {
         status: response.status,
         json,
         text,
+        buffer,
+        headers: response.headers,
         setCookie: setCookies,
         cookie: setCookies.length > 0 ? setCookies[0].split(";")[0] : null
       };
