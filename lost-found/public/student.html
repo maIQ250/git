@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>学生工作台 · 校园失物招领系统</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="student.html">
+        <span class="brand-mark" aria-hidden="true">失</span>
+        <span>校园失物招领系统</span>
+      </a>
+      <div class="topbar-actions">
+        <div class="who" id="who"></div>
+        <button class="btn ghost" type="button" id="logout">退出登录</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <span class="eyebrow">学生端</span>
+        <h1>学生工作台</h1>
+        <p id="welcome">正在加载当前登录身份…</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="value" id="stat-mine">—</div>
+          <div class="label">我的发布</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="stat-claims">—</div>
+          <div class="label">我的认领申请</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="stat-public">—</div>
+          <div class="label">公开在库信息</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>信息列表</h2>
+        <p class="muted">列表、搜索与筛选将在下一阶段接入。</p>
+        <div class="empty">
+          <div class="icon" aria-hidden="true">📦</div>
+          <p>暂无信息</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>即将开放</h2>
+        <p class="muted">当前版本已经完成账号体系（注册 / 登录 / 会话 / 权限）与数据库结构，以下功能会在后续阶段逐个接入：</p>
+        <ul class="muted">
+          <li>发布寻物 / 招领信息（含图片上传）</li>
+          <li>关键词搜索、类型与状态筛选、分页</li>
+          <li>提交认领申请、查看我的申请</li>
+          <li>编辑与删除自己的发布</li>
+        </ul>
+      </div>
+    </main>
+
+    <script type="module" src="js/student.js"></script>
+  </body>
+</html>

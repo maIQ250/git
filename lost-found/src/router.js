@@ -65,14 +65,21 @@ function assertAccess(access, user) {
   }
 }
 
-export function createApp({ db, config }) {
+export function createApp({ db, config, staticHandler }) {
   return async function handle(req, res) {
     try {
       const url = new URL(req.url, "http://localhost");
+      const isApiPath = url.pathname === "/api" || url.pathname.startsWith("/api/");
+
+      // 非 /api 开头的请求先交给静态文件服务；没有对应文件再走 404。
+      if (!isApiPath && staticHandler && (await staticHandler(req, res, url.pathname))) {
+        return;
+      }
+
       const matched = matchRoute(req.method, url.pathname);
 
       if (!matched) {
-        throw new HttpError(404, "NOT_FOUND", "接口不存在");
+        throw new HttpError(404, "NOT_FOUND", isApiPath ? "接口不存在" : "页面不存在");
       }
 
       const cookies = parseCookies(req.headers.cookie);

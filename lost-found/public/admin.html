@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理后台 · 校园失物招领系统</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="admin.html">
+        <span class="brand-mark" aria-hidden="true">失</span>
+        <span>校园失物招领系统</span>
+      </a>
+      <div class="topbar-actions">
+        <div class="who" id="who"></div>
+        <button class="btn ghost" type="button" id="logout">退出登录</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <span class="eyebrow">管理端</span>
+        <h1>管理后台</h1>
+        <p id="welcome">正在加载当前登录身份…</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="value" id="stat-pending">—</div>
+          <div class="label">待审核</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="stat-approved">—</div>
+          <div class="label">已通过</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="stat-users">—</div>
+          <div class="label">学生账号</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="stat-returned">—</div>
+          <div class="label">已归还</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>待审核队列</h2>
+        <p class="muted">审核流将在后续阶段接入。</p>
+        <div class="empty">
+          <div class="icon" aria-hidden="true">🗂️</div>
+          <p>暂无待审核信息</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>即将开放</h2>
+        <p class="muted">当前版本已经完成管理员登录、角色校验与数据库结构，以下功能会在后续阶段逐个接入：</p>
+        <ul class="muted">
+          <li>信息审核（通过 / 驳回）与状态流转</li>
+          <li>全部信息的搜索与状态筛选</li>
+          <li>学生账号管理（查看 / 封禁）</li>
+          <li>数据概览统计</li>
+        </ul>
+      </div>
+    </main>
+
+    <script type="module" src="js/admin.js"></script>
+  </body>
+</html>

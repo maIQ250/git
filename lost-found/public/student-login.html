@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>学生登录 · 校园失物招领系统</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">失</span>
+        <span>校园失物招领系统</span>
+      </a>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="index.html">返回入口</a>
+      </div>
+    </header>
+
+    <main class="page narrow">
+      <div class="page-head">
+        <span class="eyebrow">学生端</span>
+        <h1>学生登录</h1>
+        <p>使用学号登录，或注册一个新的学生账号。</p>
+      </div>
+
+      <div class="card">
+        <div class="tabs" role="tablist" aria-label="登录或注册">
+          <button
+            class="tab"
+            id="tab-login"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-login"
+          >
+            登录
+          </button>
+          <button
+            class="tab"
+            id="tab-register"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-register"
+          >
+            注册
+          </button>
+        </div>
+
+        <div id="panel-login" role="tabpanel" aria-labelledby="tab-login">
+          <form id="login-form" novalidate>
+            <div class="field">
+              <label for="login-username">学号</label>
+              <input
+                type="text"
+                id="login-username"
+                name="username"
+                autocomplete="username"
+                autocapitalize="none"
+                spellcheck="false"
+              />
+              <p class="field-error" id="login-username-error"></p>
+            </div>
+
+            <div class="field">
+              <label for="login-password">密码</label>
+              <input
+                type="password"
+                id="login-password"
+                name="password"
+                autocomplete="current-password"
+              />
+              <p class="field-error" id="login-password-error"></p>
+            </div>
+
+            <button class="btn block" type="submit" id="login-submit">登录</button>
+          </form>
+        </div>
+
+        <div id="panel-register" role="tabpanel" aria-labelledby="tab-register" hidden>
+          <form id="register-form" novalidate>
+            <div class="field">
+              <label for="register-username">学号</label>
+              <input
+                type="text"
+                id="register-username"
+                name="username"
+                autocomplete="username"
+                autocapitalize="none"
+                spellcheck="false"
+              />
+              <p class="field-error" id="register-username-error"></p>
+            </div>
+
+            <div class="field">
+              <label for="register-name">姓名</label>
+              <input type="text" id="register-name" name="name" autocomplete="name" />
+              <p class="field-error" id="register-name-error"></p>
+            </div>
+
+            <div class="field">
+              <label for="register-password">密码</label>
+              <input
+                type="password"
+                id="register-password"
+                name="password"
+                autocomplete="new-password"
+              />
+              <p class="field-error" id="register-password-error"></p>
+            </div>
+
+            <div class="field">
+              <label for="register-confirm">确认密码</label>
+              <input
+                type="password"
+                id="register-confirm"
+                name="confirm"
+                autocomplete="new-password"
+              />
+              <p class="field-error" id="register-confirm-error"></p>
+            </div>
+
+            <button class="btn block" type="submit" id="register-submit">注册并登录</button>
+          </form>
+        </div>
+
+        <p class="hint">演示学生账号：学号 111 / 密码 222</p>
+      </div>
+    </main>
+
+    <script type="module" src="js/student-login.js"></script>
+  </body>
+</html>
