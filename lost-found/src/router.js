@@ -7,13 +7,16 @@ import {
   handleStudentLogin,
   resolveSession
 } from "./auth.js";
+import { handleCreateItem } from "./items.js";
 
 const ROUTES = [
   { method: "POST", path: "/api/student/register", handler: handleRegister, access: "public" },
   { method: "POST", path: "/api/student/login", handler: handleStudentLogin, access: "public" },
   { method: "POST", path: "/api/admin/login", handler: handleAdminLogin, access: "public" },
   { method: "POST", path: "/api/logout", handler: handleLogout, access: "any" },
-  { method: "GET", path: "/api/me", handler: handleMe, access: "any" }
+  { method: "GET", path: "/api/me", handler: handleMe, access: "any" },
+
+  { method: "POST", path: "/api/items", handler: handleCreateItem, access: "any" }
 ];
 
 function matchRoute(method, pathname) {

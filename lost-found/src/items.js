@@ -1,4 +1,7 @@
-import { HttpError } from "./http-utils.js";
+import { HttpError, readRawBody } from "./http-utils.js";
+import { readMultipartForm, readPhoto } from "./multipart.js";
+import { requireDate, requireString } from "./validate.js";
+import { getUserById } from "./auth.js";
 
 // 列表与详情查询共用的列。photo 本身不查出来，只带一个 has_photo 标记，
 // 避免把 2MB 的二进制塞进每一个列表响应里。
@@ -225,5 +228,52 @@ export function listItems(db, { q, type, statuses, page, pageSize }) {
     page,
     pageSize,
     totalPages: Math.ceil(total / pageSize)
+  };
+}
+// ---------------------------------------------------------------------------
+// 以下为 HTTP 接口处理函数。签名统一为 (ctx) => Promise<{ status, body } | undefined>，
+// ctx 结构：{ req, res, db, config, params, query, user }
+// 返回 undefined 表示处理函数已经自行把响应写完（目前只有返回图片时这么用）。
+// ---------------------------------------------------------------------------
+
+const MULTIPART_OVERHEAD = 64 * 1024;
+
+async function readItemForm(ctx) {
+  const limit = ctx.config.maxPhotoBytes + MULTIPART_OVERHEAD;
+  const raw = await readRawBody(ctx.req, limit);
+  const { fields, files } = readMultipartForm(raw, ctx.req.headers["content-type"], limit);
+
+  const photoFile = files.find((file) => file.name === "photo");
+
+  return {
+    fields,
+    photo: readPhoto(photoFile, ctx.config.maxPhotoBytes)
+  };
+}
+
+/**
+ * 登记物品。
+ * 角色决定一切：管理员登记的是招领物品（直接公开），学生发布的是寻物启事（待审核）。
+ * 客户端传的 type / status 一律忽略。
+ */
+export async function handleCreateItem(ctx) {
+  const isAdmin = ctx.user.role === "admin";
+  const { fields, photo } = await readItemForm(ctx);
+
+  const row = createItem(ctx.db, {
+    userId: ctx.user.id,
+    type: isAdmin ? "found" : "lost",
+    status: isAdmin ? "approved" : "pending",
+    title: requireString(fields.title, { label: isAdmin ? "物品名称" : "标题", max: 60 }),
+    description: requireString(fields.description, { label: "描述", max: 1000 }),
+    place: requireString(fields.place, { label: isAdmin ? "拾获地点" : "丢失地点", max: 60 }),
+    happenedAt: requireDate(fields.happened_at, { label: isAdmin ? "拾获日期" : "丢失日期" }),
+    contact: requireString(fields.contact, { label: "联系方式", max: 100 }),
+    photo
+  });
+
+  return {
+    status: 201,
+    body: { item: toItemDetail(row, { viewer: ctx.user, author: ctx.user }) }
   };
 }
