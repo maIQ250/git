@@ -39,3 +39,61 @@ export function requirePassword(value) {
 
   return value;
 }
+export function requireEnum(value, allowed, { label }) {
+  const text = requireString(value, { label, min: 1, max: 30 });
+
+  if (!allowed.includes(text)) {
+    throw new HttpError(400, "INVALID_INPUT", `${label}只能是 ${allowed.join(" / ")}`);
+  }
+
+  return text;
+}
+
+export function requireDate(value, { label = "日期" } = {}) {
+  const text = requireString(value, { label, min: 1, max: 10 });
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    throw new HttpError(400, "INVALID_INPUT", `${label}格式必须是 YYYY-MM-DD`);
+  }
+
+  const [year, month, day] = text.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  // Date 会把 2023-02-29 这类不存在的日期顺延到 3 月，用它反查即可识破
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw new HttpError(400, "INVALID_INPUT", `${label}不是有效日期`);
+  }
+
+  return text;
+}
+
+export function requireInt(value, { label, min, max, fallback }) {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  const number = typeof value === "number" ? value : Number(String(value).trim());
+
+  if (!Number.isInteger(number)) {
+    throw new HttpError(400, "INVALID_INPUT", `${label}必须是整数`);
+  }
+  if (number < min || number > max) {
+    throw new HttpError(400, "INVALID_INPUT", `${label}必须在 ${min} 到 ${max} 之间`);
+  }
+
+  return number;
+}
+
+export function requireId(value, { label = "编号" } = {}) {
+  const text = String(value ?? "");
+
+  if (!/^\d+$/.test(text) || Number(text) < 1) {
+    throw new HttpError(404, "ITEM_NOT_FOUND", `${label}对应的信息不存在`);
+  }
+
+  return Number(text);
+}
