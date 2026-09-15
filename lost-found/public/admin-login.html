@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理员登录 · 校园失物招领系统</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">失</span>
+        <span>校园失物招领系统</span>
+      </a>
+      <div class="topbar-actions">
+        <a class="btn ghost" href="index.html">返回入口</a>
+      </div>
+    </header>
+
+    <main class="page narrow">
+      <div class="page-head">
+        <span class="eyebrow">管理端</span>
+        <h1>管理员登录</h1>
+        <p>仅限管理员账号使用，学生账号无法进入管理端。</p>
+      </div>
+
+      <div class="card">
+        <form id="admin-login-form" novalidate>
+          <div class="field">
+            <label for="admin-username">管理员账号</label>
+            <input
+              type="text"
+              id="admin-username"
+              name="username"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+            />
+            <p class="field-error" id="admin-username-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="admin-password">密码</label>
+            <input
+              type="password"
+              id="admin-password"
+              name="password"
+              autocomplete="current-password"
+            />
+            <p class="field-error" id="admin-password-error"></p>
+          </div>
+
+          <button class="btn block" type="submit" id="admin-submit">登录管理端</button>
+        </form>
+
+        <p class="hint">演示管理员账号：123 / 密码 456</p>
+      </div>
+    </main>
+
+    <script type="module" src="js/admin-login.js"></script>
+  </body>
+</html>

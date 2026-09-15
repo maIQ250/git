@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>学生工作台 · 校园失物招领系统</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="student.html">
+        <span class="brand-mark" aria-hidden="true">失</span>
+        <span>校园失物招领系统</span>
+      </a>
+      <div class="topbar-actions">
+        <div class="who" id="who"></div>
+        <button class="btn ghost" type="button" id="logout">退出登录</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head">
+        <span class="eyebrow">学生端</span>
+        <h1>学生工作台</h1>
+        <p id="welcome">正在加载当前登录身份…</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="value" id="stat-mine">—</div>
+          <div class="label">我的发布</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="stat-claims">—</div>
+          <div class="label">我的认领申请</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="stat-public">—</div>
+          <div class="label">公开在库信息</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>失物招领柜</h2>
+        <p class="muted">这里是目前放在失物招领处的东西，认出自己的就打开详情查看领取方式。</p>
+
+        <form class="filters" id="filters" role="search">
+          <div class="filter-search">
+            <label class="sr-only" for="search-input">搜索关键词</label>
+            <input
+              type="search"
+              id="search-input"
+              placeholder="搜索名称、描述或地点，例如「雨伞」"
+              maxlength="50"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="filter-selects">
+            <label class="sr-only" for="filter-type">类型</label>
+            <select id="filter-type">
+              <option value="">全部类型</option>
+              <option value="found">只看招领</option>
+              <option value="lost">只看寻物</option>
+            </select>
+
+            <label class="sr-only" for="filter-status">状态</label>
+            <select id="filter-status">
+              <option value="approved">只看在柜</option>
+              <option value="returned">只看已归还</option>
+              <option value="all">包含已归还</option>
+            </select>
+
+            <button class="btn ghost" type="button" id="reset-filters">清空</button>
+          </div>
+        </form>
+
+        <p class="muted" id="result-summary">正在加载…</p>
+
+        <div class="cabinet-grid" id="cabinet"></div>
+
+        <div class="empty" id="cabinet-empty" hidden>
+          <div class="icon" aria-hidden="true">📦</div>
+          <p id="cabinet-empty-text">还没有物品</p>
+        </div>
+
+        <div class="pager" id="pager" hidden>
+          <button class="btn ghost" type="button" id="prev-page">上一页</button>
+          <span class="muted" id="page-indicator"></span>
+          <button class="btn ghost" type="button" id="next-page">下一页</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>我发布的寻物启事</h2>
+        <p class="muted" id="my-items-summary">加载中…</p>
+        <div class="cabinet-grid" id="my-items"></div>
+      </div>
+
+      <dialog id="item-detail" class="detail-dialog" aria-labelledby="detail-title">
+        <div class="detail-head">
+          <h2 id="detail-title">物品详情</h2>
+          <button class="btn ghost" type="button" id="detail-close">关闭</button>
+        </div>
+        <div class="detail-body" id="detail-body"></div>
+      </dialog>
+    </main>
+
+    <script type="module" src="js/student.js"></script>
+  </body>
+</html>
