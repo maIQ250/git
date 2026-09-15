@@ -14,6 +14,10 @@ import path from "node:path";
 const BASE = process.env.SMOKE_BASE ?? "http://127.0.0.1:3000";
 const CDP_PORT = 9333;
 const FIXTURE_TITLE = "烟灰色雨伞";
+// 搜索词必须是「只可能命中夹具」的串。不要用「雨伞」这类通用词：
+// 只要库里还有别人登记的含「雨伞」的物品，搜索结果就不是 1 条，断言会误报，
+// 但那其实是搜索功能在正确工作，不是缺陷。
+const FIXTURE_KEYWORD = "烟灰色";
 const EDGE_CANDIDATES = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
@@ -284,13 +288,13 @@ try {
   await goto(`${BASE}/student.html`);
   await evaluate(
     '(() => { const box = document.getElementById("search-input");' +
-      'box.value = "雨伞";' +
+      `box.value = ${JSON.stringify(FIXTURE_KEYWORD)};` +
       'box.dispatchEvent(new Event("input", { bubbles: true })); })()'
   );
   await sleep(1200);
 
   const summary = await evaluate('document.getElementById("result-summary").textContent');
-  check("学生搜索「雨伞」命中刚登记的物品", summary.includes("共 1 条结果"), summary);
+  check(`学生搜索「${FIXTURE_KEYWORD}」命中刚登记的物品`, summary.includes("共 1 条结果"), summary);
 
   const titles = await evaluate(
     'Array.from(document.querySelectorAll("#cabinet .cabinet-title")).map((el) => el.textContent)'
