@@ -158,3 +158,72 @@ export function toItemDetail(row, { viewer, author }) {
     updatedAt: row.updated_at
   };
 }
+const PUBLIC_STATUS_FILTERS = {
+  approved: ["approved"],
+  returned: ["returned"],
+  all: ["approved", "returned"]
+};
+
+export function resolvePublicStatuses(status) {
+  if (status === undefined || status === null || status === "") {
+    return PUBLIC_STATUS_FILTERS.approved;
+  }
+
+  const resolved = PUBLIC_STATUS_FILTERS[status];
+  if (!resolved) {
+    throw new HttpError(400, "INVALID_INPUT", "状态只能是 approved / returned / all");
+  }
+
+  return resolved;
+}
+
+/**
+ * 转义 LIKE 的通配符，配合 SQL 里的 ESCAPE '\' 使用，
+ * 保证用户输入的 % 和 _ 被当成普通字符。
+ */
+export function escapeLike(value) {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+export function listItems(db, { q, type, statuses, page, pageSize }) {
+  const conditions = [];
+  const params = [];
+
+  if (statuses && statuses.length > 0) {
+    conditions.push(`status IN (${statuses.map(() => "?").join(", ")})`);
+    params.push(...statuses);
+  }
+
+  if (type) {
+    conditions.push("type = ?");
+    params.push(type);
+  }
+
+  const keyword = typeof q === "string" ? q.trim() : "";
+  if (keyword) {
+    conditions.push(
+      "(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR place LIKE ? ESCAPE '\\')"
+    );
+    const pattern = `%${escapeLike(keyword)}%`;
+    params.push(pattern, pattern, pattern);
+  }
+
+  const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const total = db.prepare(`SELECT COUNT(*) AS count FROM items ${whereSql}`).get(...params).count;
+
+  const rows = db
+    .prepare(
+      `SELECT ${LIST_COLUMNS} FROM items ${whereSql}
+        ORDER BY created_at DESC, id DESC
+        LIMIT ? OFFSET ?`
+    )
+    .all(...params, pageSize, (page - 1) * pageSize);
+
+  return {
+    rows,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize)
+  };
+}
