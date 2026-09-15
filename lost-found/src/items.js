@@ -1,6 +1,6 @@
 import { HttpError, readRawBody } from "./http-utils.js";
 import { readMultipartForm, readPhoto } from "./multipart.js";
-import { requireDate, requireString } from "./validate.js";
+import { requireDate, requireEnum, requireId, requireInt, requireString } from "./validate.js";
 import { getUserById } from "./auth.js";
 
 // 列表与详情查询共用的列。photo 本身不查出来，只带一个 has_photo 标记，
@@ -247,7 +247,9 @@ async function readItemForm(ctx) {
 
   return {
     fields,
-    photo: readPhoto(photoFile, ctx.config.maxPhotoBytes)
+    photo: readPhoto(photoFile, ctx.config.maxPhotoBytes),
+    // 完全没有 photo 分段 → 修改时保持原图；有分段但内容为空 → 删除图片
+    photoProvided: photoFile !== undefined
   };
 }
 
@@ -275,5 +277,145 @@ export async function handleCreateItem(ctx) {
   return {
     status: 201,
     body: { item: toItemDetail(row, { viewer: ctx.user, author: ctx.user }) }
+  };
+}
+function loadItemForViewer(db, id, user) {
+  const row = getItemById(db, id);
+
+  // 非公开条目对无关的人一律 404，不泄露「存在但被驳回」这一信息
+  if (!row || (!isPubliclyVisible(row) && !canManageItem(row, user))) {
+    throw new HttpError(404, "ITEM_NOT_FOUND", "信息不存在");
+  }
+
+  return row;
+}
+
+export async function handleListItems(ctx) {
+  const keyword = ctx.query.get("q") ?? "";
+
+  if (keyword.trim().length > ctx.config.searchMaxLength) {
+    throw new HttpError(400, "INVALID_INPUT", `关键词不能超过 ${ctx.config.searchMaxLength} 个字符`);
+  }
+
+  const rawType = ctx.query.get("type") ?? "";
+  const type = rawType === "" ? null : requireEnum(rawType, ["lost", "found"], { label: "类型" });
+
+  const result = listItems(ctx.db, {
+    q: keyword,
+    type,
+    statuses: resolvePublicStatuses(ctx.query.get("status")),
+    page: requireInt(ctx.query.get("page"), { label: "页码", min: 1, max: 10000, fallback: 1 }),
+    pageSize: requireInt(ctx.query.get("pageSize"), {
+      label: "每页条数",
+      min: 1,
+      max: ctx.config.pageSizeMax,
+      fallback: ctx.config.pageSizeDefault
+    })
+  });
+
+  return {
+    status: 200,
+    body: {
+      items: result.rows.map(toListItem),
+      page: result.page,
+      pageSize: result.pageSize,
+      total: result.total,
+      totalPages: result.totalPages
+    }
+  };
+}
+
+export async function handleGetItem(ctx) {
+  const id = requireId(ctx.params.id);
+  const row = loadItemForViewer(ctx.db, id, ctx.user);
+
+  return {
+    status: 200,
+    body: { item: toItemDetail(row, { viewer: ctx.user, author: getUserById(ctx.db, row.user_id) }) }
+  };
+}
+
+export async function handleGetItemPhoto(ctx) {
+  const id = requireId(ctx.params.id);
+  loadItemForViewer(ctx.db, id, ctx.user);
+
+  const photo = getItemPhoto(ctx.db, id);
+  if (!photo) {
+    throw new HttpError(404, "PHOTO_NOT_FOUND", "该信息没有图片");
+  }
+
+  const data = Buffer.from(photo.photo);
+
+  ctx.res.writeHead(200, {
+    "Content-Type": photo.photo_type,
+    "Content-Length": data.length,
+    "Cache-Control": "public, max-age=60"
+  });
+  ctx.res.end(data);
+
+  return undefined;
+}
+
+export async function handleUpdateItem(ctx) {
+  const id = requireId(ctx.params.id);
+  const row = getItemById(ctx.db, id);
+
+  if (!row || !canManageItem(row, ctx.user)) {
+    throw new HttpError(404, "ITEM_NOT_FOUND", "信息不存在");
+  }
+
+  const isAdmin = ctx.user.role === "admin";
+  const { fields, photo, photoProvided } = await readItemForm(ctx);
+
+  const updated = updateItem(ctx.db, id, {
+    title: requireString(fields.title, { label: isAdmin ? "物品名称" : "标题", max: 60 }),
+    description: requireString(fields.description, { label: "描述", max: 1000 }),
+    place: requireString(fields.place, { label: isAdmin ? "拾获地点" : "丢失地点", max: 60 }),
+    happenedAt: requireDate(fields.happened_at, { label: isAdmin ? "拾获日期" : "丢失日期" }),
+    contact: requireString(fields.contact, { label: "联系方式", max: 100 }),
+    photo: photoProvided ? photo : undefined,
+    // 学生改过的寻物启事要重新走审核，管理员修改不改变状态
+    ...(isAdmin ? {} : { status: "pending", reviewNote: null, reviewedBy: null })
+  });
+
+  return {
+    status: 200,
+    body: { item: toItemDetail(updated, { viewer: ctx.user, author: getUserById(ctx.db, updated.user_id) }) }
+  };
+}
+
+export async function handleDeleteItem(ctx) {
+  const id = requireId(ctx.params.id);
+  const row = getItemById(ctx.db, id);
+
+  if (!row || !canManageItem(row, ctx.user)) {
+    throw new HttpError(404, "ITEM_NOT_FOUND", "信息不存在");
+  }
+
+  deleteItem(ctx.db, id);
+
+  return { status: 200, body: { ok: true } };
+}
+
+export async function handleMyItems(ctx) {
+  const rows = ctx.db
+    .prepare(`SELECT ${LIST_COLUMNS} FROM items WHERE user_id = ? ORDER BY created_at DESC, id DESC`)
+    .all(ctx.user.id);
+
+  const pendingCounts = new Map(
+    ctx.db
+      .prepare("SELECT item_id, COUNT(*) AS count FROM claims WHERE status = 'pending' GROUP BY item_id")
+      .all()
+      .map((entry) => [entry.item_id, entry.count])
+  );
+
+  return {
+    status: 200,
+    body: {
+      items: rows.map((row) => ({
+        ...toListItem(row),
+        pendingClaims: pendingCounts.get(row.id) ?? 0
+      }))
+    }
   };
 }

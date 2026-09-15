@@ -7,7 +7,15 @@ import {
   handleStudentLogin,
   resolveSession
 } from "./auth.js";
-import { handleCreateItem } from "./items.js";
+import {
+  handleCreateItem,
+  handleDeleteItem,
+  handleGetItem,
+  handleGetItemPhoto,
+  handleListItems,
+  handleMyItems,
+  handleUpdateItem
+} from "./items.js";
 
 const ROUTES = [
   { method: "POST", path: "/api/student/register", handler: handleRegister, access: "public" },
@@ -16,7 +24,13 @@ const ROUTES = [
   { method: "POST", path: "/api/logout", handler: handleLogout, access: "any" },
   { method: "GET", path: "/api/me", handler: handleMe, access: "any" },
 
-  { method: "POST", path: "/api/items", handler: handleCreateItem, access: "any" }
+  { method: "GET", path: "/api/items", handler: handleListItems, access: "public" },
+  { method: "POST", path: "/api/items", handler: handleCreateItem, access: "any" },
+  { method: "GET", path: "/api/items/:id/photo", handler: handleGetItemPhoto, access: "public" },
+  { method: "GET", path: "/api/items/:id", handler: handleGetItem, access: "public" },
+  { method: "PUT", path: "/api/items/:id", handler: handleUpdateItem, access: "any" },
+  { method: "DELETE", path: "/api/items/:id", handler: handleDeleteItem, access: "any" },
+  { method: "GET", path: "/api/my/items", handler: handleMyItems, access: "any" }
 ];
 
 function matchRoute(method, pathname) {
@@ -100,7 +114,10 @@ export function createApp({ db, config, staticHandler }) {
         user
       });
 
-      sendJson(res, result.status ?? 200, result.body);
+      // 返回 undefined 表示处理函数已经自行写好响应（例如直接输出图片二进制）
+      if (result !== undefined) {
+        sendJson(res, result.status ?? 200, result.body);
+      }
     } catch (error) {
       sendError(res, error);
     }
