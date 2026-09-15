@@ -23,8 +23,12 @@ export async function request(path, { method = "GET", body } = {}) {
     throw new ApiError(0, "NETWORK_ERROR", "网络连接失败，请确认服务已启动后重试");
   }
 
+  return readResponse(response);
+}
+async function readResponse(response) {
   const text = await response.text();
   let data = null;
+
   if (text) {
     try {
       data = JSON.parse(text);
@@ -43,6 +47,36 @@ export async function request(path, { method = "GET", body } = {}) {
   }
 
   return data;
+}
+
+export async function requestForm(path, formData, { method = "POST" } = {}) {
+  let response;
+  try {
+    response = await fetch(path, { method, body: formData, credentials: "same-origin" });
+  } catch {
+    throw new ApiError(0, "NETWORK_ERROR", "网络连接失败，请确认服务已启动后重试");
+  }
+
+  return readResponse(response);
+}
+
+export function itemTypeBadge(type) {
+  return type === "found"
+    ? { text: "招领", className: "badge primary" }
+    : { text: "寻物", className: "badge warning" };
+}
+
+export function itemStatusBadge(status) {
+  switch (status) {
+    case "approved":
+      return { text: "在柜中", className: "badge success" };
+    case "returned":
+      return { text: "已归还", className: "badge" };
+    case "pending":
+      return { text: "待审核", className: "badge warning" };
+    default:
+      return { text: "已驳回", className: "badge" };
+  }
 }
 
 /* ===== 轻提示 ===== */

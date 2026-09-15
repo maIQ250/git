@@ -412,6 +412,133 @@ select:focus {
   font-size: 13px;
 }
 
+/* ===== 输入控件补充 ===== */
+input[type="date"],
+input[type="file"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d5dbe9;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+
+input[type="date"]:focus,
+input[type="file"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.16);
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 16px;
+}
+
+/* ===== 照片预览 ===== */
+.photo-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px dashed #cfd7e8;
+  border-radius: var(--radius-sm);
+  background: #fbfcff;
+}
+
+.photo-preview img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #eef1f8;
+}
+
+/* ===== 物品卡片 ===== */
+.cabinet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.cabinet-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.cabinet-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.cabinet-card .thumb {
+  display: grid;
+  place-items: center;
+  height: 160px;
+  background: #eef1f8;
+  overflow: hidden;
+}
+
+.cabinet-card .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-placeholder {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.cabinet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+
+.cabinet-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cabinet-title {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.cabinet-meta {
+  margin: 0;
+  font-size: 13px;
+}
+
+.cabinet-desc {
+  margin: 0;
+  font-size: 14px;
+  color: #4c5466;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cabinet-body .btn {
+  align-self: flex-start;
+  margin-top: 4px;
+}
 /* ===== 空状态 ===== */
 .empty {
   padding: 40px 20px;

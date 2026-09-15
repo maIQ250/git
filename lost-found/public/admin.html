@@ -54,14 +54,61 @@
       </div>
 
       <div class="card">
-        <h2>即将开放</h2>
-        <p class="muted">当前版本已经完成管理员登录、角色校验与数据库结构，以下功能会在后续阶段逐个接入：</p>
-        <ul class="muted">
-          <li>信息审核（通过 / 驳回）与状态流转</li>
-          <li>全部信息的搜索与状态筛选</li>
-          <li>学生账号管理（查看 / 封禁）</li>
-          <li>数据概览统计</li>
-        </ul>
+        <h2>登记物品</h2>
+        <p class="muted">把收到的实物登记进来，提交后立刻出现在学生的失物招领柜里。</p>
+
+        <form id="item-form" novalidate>
+          <div class="field">
+            <label for="item-title">物品名称</label>
+            <input type="text" id="item-title" name="title" maxlength="60" />
+            <p class="field-error" id="item-title-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="item-description">详细描述</label>
+            <textarea id="item-description" name="description" rows="3" maxlength="1000"></textarea>
+            <p class="field-error" id="item-description-error"></p>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="item-place">拾获地点</label>
+              <input type="text" id="item-place" name="place" maxlength="60" />
+              <p class="field-error" id="item-place-error"></p>
+            </div>
+
+            <div class="field">
+              <label for="item-date">拾获日期</label>
+              <input type="date" id="item-date" name="happened_at" />
+              <p class="field-error" id="item-date-error"></p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="item-contact">领取地点与联系方式</label>
+            <input type="text" id="item-contact" name="contact" maxlength="100" />
+            <p class="field-error" id="item-contact-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="item-photo">照片（选填）</label>
+            <input type="file" id="item-photo" name="photo" accept="image/jpeg,image/png,image/webp" />
+            <p class="field-error" id="item-photo-error"></p>
+
+            <div class="photo-preview" id="photo-preview" hidden>
+              <img id="photo-preview-image" alt="待上传照片预览" />
+              <button class="btn ghost" type="button" id="photo-remove">移除照片</button>
+            </div>
+          </div>
+
+          <button class="btn" type="submit" id="item-submit">登记物品</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>我登记的物品</h2>
+        <p class="muted" id="my-items-summary">加载中…</p>
+        <div class="cabinet-grid" id="my-items"></div>
       </div>
     </main>
 
