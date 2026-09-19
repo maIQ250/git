@@ -1,87 +1,126 @@
-/* 珠科雷达 · 主入口页样式
-   独立于学生端的 styles.css，避免入口页的改动影响已经验证过的信息板。 */
+/* 珠科雷达 · 主入口页（第一屏）样式
+ *
+ * 变量全部加 p- 前缀并只挂在 .portal 上，避免和 styles.css 里的
+ * --ink / --line 等变量互相覆盖——学生端的样式表要在同一页面里共存。
+ *
+ * 首屏是「锁定」的：未点击学生端之前 body 不能滚动，
+ * 点击后由脚本解锁并平滑滚到第二屏。
+ */
 
-:root {
-  --red: #b3123a;
-  --red-soft: #fdeef2;
-  --blue: #1b4fa8;
-  --blue-soft: #eef3fd;
-  --ink: #1a1d22;
-  --ink-2: #4a5058;
-  --muted: #7c848e;
-  --line: #e6e9ed;
-  --font: "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
-          "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+.portal {
+  --p-red: #b3123a;
+  --p-red-soft: #fdeef2;
+  --p-blue: #1b4fa8;
+  --p-blue-soft: #eef3fd;
+  --p-ink: #1a1d22;
+  --p-ink2: #4a5058;
+  --p-muted: #7c848e;
+  --p-line: #e6e9ed;
+  --p-font: "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+            "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+
+  margin: 0;
+  background: #fff;
+  font-family: var(--p-font);
+  color: var(--p-ink);
 }
 
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
+/* 初始锁定：第一屏占满视口且不允许滚动 */
+body.portal.is-locked {
+  height: 100vh;
+  overflow: hidden;
+}
 
-body.portal {
-  margin: 0; min-height: 100vh;
-  font-family: var(--font); color: var(--ink);
+.portal-screen {
+  height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 3vh, 40px) clamp(16px, 3vw, 48px);
   background: #fff;
-  display: grid; place-items: center;
-  padding: 40px 28px;
+  overflow: hidden;
 }
 
 .portal-shell {
   width: min(1180px, 100%);
   display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
-  gap: 48px; align-items: center;
+  gap: clamp(22px, 3.4vw, 48px); align-items: center;
 }
 
-.portal-visual { border-radius: 18px; overflow: hidden; box-shadow: 0 24px 60px -32px rgba(20, 25, 32, .45); }
-.portal-visual img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.portal-visual {
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 24px 60px -32px rgba(20, 25, 32, .45);
+  max-height: 54vh;
+}
+.portal-visual img { display: block; width: 100%; height: 100%; max-height: 54vh; object-fit: cover; }
 
-.portal-main { display: grid; gap: 26px; }
+.portal-main { display: grid; gap: clamp(14px, 2.2vh, 26px); }
 
-.portal-logo { width: 260px; max-width: 70%; height: auto; display: block; }
+.portal-logo { width: min(250px, 62%); height: auto; display: block; }
 .portal-brand h1 {
-  margin: 18px 0 0; font-size: clamp(40px, 5.2vw, 62px); font-weight: 700;
-  letter-spacing: -.5px; line-height: 1.08;
+  margin: 14px 0 0; font-size: clamp(34px, 4.4vw, 58px); font-weight: 700;
+  letter-spacing: -.5px; line-height: 1.06;
 }
-.portal-claim { margin: 14px 0 0; font-size: clamp(15px, 1.5vw, 19px); color: var(--ink-2); }
-.portal-sub { margin: 10px 0 0; font-size: 14px; color: var(--muted); letter-spacing: .5px; }
+.portal-claim { margin: 10px 0 0; font-size: clamp(14px, 1.4vw, 18px); color: var(--p-ink2); }
+.portal-sub { margin: 8px 0 0; font-size: 13.5px; color: var(--p-muted); letter-spacing: .5px; }
 
-.portal-entries { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.portal-entries { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .entry {
-  display: grid; gap: 7px; justify-items: center; text-align: center;
-  padding: 24px 18px 20px; border-radius: 16px; text-decoration: none;
-  border: 1px solid var(--line); color: inherit;
-  transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+  display: grid; gap: 6px; justify-items: center; text-align: center;
+  padding: 22px 18px 18px; border-radius: 16px; text-decoration: none;
+  border: 1px solid var(--p-line); color: inherit;
+  transition: transform .14s ease, box-shadow .14s ease;
 }
 .entry:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -24px rgba(20, 25, 32, .5); }
-.entry-student { background: var(--red-soft); border-color: #f6d6de; color: var(--red); }
-.entry-admin { background: var(--blue-soft); border-color: #d8e3f7; color: var(--blue); }
-.entry-name { font-size: 21px; font-weight: 700; color: currentColor; }
-.entry-desc { font-size: 12.5px; color: var(--muted); }
+.entry-student { background: var(--p-red-soft); border-color: #f6d6de; color: var(--p-red); }
+.entry-admin { background: var(--p-blue-soft); border-color: #d8e3f7; color: var(--p-blue); }
+.entry-name { font-size: 20px; font-weight: 700; }
+.entry-desc { font-size: 12.5px; color: var(--p-muted); }
 .entry-btn {
-  margin-top: 6px; padding: 9px 26px; border-radius: 999px;
-  background: currentColor; font-size: 14.5px; font-weight: 600;
+  margin-top: 6px; padding: 8px 24px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; color: #fff;
 }
-.entry-btn { color: #fff; }
-.entry-student .entry-btn { background: var(--red); }
-.entry-admin .entry-btn { background: var(--blue); }
+.entry-student .entry-btn { background: var(--p-red); }
+.entry-admin .entry-btn { background: var(--p-blue); }
 
-.portal-note { font-size: 12.5px; color: var(--muted); text-align: center; }
+.portal-note { font-size: 12.5px; color: var(--p-muted); text-align: center; }
 .portal-footer {
-  font-size: 12.5px; color: var(--muted); text-align: center;
-  padding-top: 16px; border-top: 1px solid var(--line);
+  font-size: 12.5px; color: var(--p-muted); text-align: center;
+  padding-top: 14px; border-top: 1px solid var(--p-line);
 }
+
+/* 第二屏：学生端内容原样嵌在这里，滚动到此后页面恢复正常滚动 */
+.student-screen { background: #f4f5f7; }
 
 @media (max-width: 900px) {
-  body.portal { padding: 24px 18px 32px; place-items: start center; }
-  .portal-shell { grid-template-columns: 1fr; gap: 26px; }
-  .portal-visual { order: 2; max-height: 240px; }
-  .portal-visual img { max-height: 240px; }
-  .portal-brand h1 { margin-top: 14px; }
-  .portal-logo { width: 210px; }
+  .portal-shell { grid-template-columns: 1fr; gap: 20px; }
+  /* 首屏是锁定的：窄屏放不下照片就会有一段内容永远看不到，所以直接不显示 */
+  .portal-visual { display: none; }
+  .portal-logo { width: 190px; }
+  .portal-brand h1 { font-size: clamp(30px, 9vw, 40px); }
+  .portal-screen { place-items: start center; padding-top: clamp(18px, 4vh, 40px); }
+  .portal-main { gap: 16px; }
 }
 
 @media (max-width: 460px) {
-  .portal-entries { grid-template-columns: 1fr; }
-  .entry { padding: 18px 14px 16px; }
+  .portal-entries { grid-template-columns: 1fr; gap: 10px; }
+  .entry { padding: 14px 12px 12px; }
+}
+
+/* 视口较矮时压缩首屏，保证内容不溢出、也不出现滚动条 */
+@media (max-height: 780px) {
+  .portal-visual, .portal-visual img { max-height: 38vh; }
+  .portal-logo { width: 200px; }
+  .portal-brand h1 { font-size: clamp(28px, 3.6vw, 44px); }
+  .entry { padding: 16px 14px 14px; }
+  .portal-main { gap: 12px; }
+}
+
+@media (max-height: 640px) {
+  .portal-visual { display: none; }
+  .portal-shell { grid-template-columns: 1fr; }
+  .portal-note { display: none; }
+  .portal-brand h1 { margin-top: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
