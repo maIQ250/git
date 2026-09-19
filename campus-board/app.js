@@ -310,7 +310,8 @@ function renderFilters() {
 
   const statusDefs = [
     { key: "all", label: "全部" },
-    { key: "urgent", label: "即将截止", test: (s) => s.key === "urgent" || s.key === "soon" },
+    // 「即将截止」严格按 24 小时内算，和首页那个数字保持同一个口径
+    { key: "urgent", label: "24 小时内截止", test: (s) => s.key === "urgent" },
     { key: "today", label: "今天有安排", test: (s) => s.key === "today" },
     { key: "open", label: "还能参与", test: (s) => s.key === "open" },
     { key: "done", label: "已结束 / 已截止", test: (s) => s.key === "done" || s.key === "closed" },
@@ -334,7 +335,7 @@ function filteredViews() {
   if (state.category !== "all") list = list.filter((v) => (CATEGORY_OF_TYPE[v.type] ?? "其他") === state.category);
   if (state.status !== "all") {
     const test = {
-      urgent: (s) => s.key === "urgent" || s.key === "soon",
+      urgent: (s) => s.key === "urgent",
       today: (s) => s.key === "today",
       open: (s) => s.key === "open",
       done: (s) => s.key === "done" || s.key === "closed",
@@ -607,6 +608,34 @@ function renderClock() {
   $("clockNotice").hidden = !(live && Math.abs(ms - REF_NOW) > DAY);
 }
 
+/**
+ * 首页入口区的三个数字来自当前数据，点一下就变成筛选条件，
+ * 所以它不是装饰性的首屏，而是进入信息板的另一种方式。
+ */
+function renderHero() {
+  const now = nowMs();
+  const list = activeViews();
+  const todayCount = list.filter((v) => {
+    const s = computeStatus(v, now);
+    return s.key === "today" || s.key === "ongoing";
+  }).length;
+  const urgentCount = list.filter((v) => computeStatus(v, now).key === "urgent").length;
+  const studentItems = list.filter((v) => v.source.kind === "student");
+  const riskyCount = studentItems.filter((v) => v.trust === "low").length;
+
+  $("heroStats").innerHTML = `
+    <button class="hero-stat" type="button" data-hero-filter="today">
+      <strong>${todayCount}</strong><span>今天有安排</span>
+    </button>
+    <button class="hero-stat" type="button" data-hero-filter="urgent">
+      <strong>${urgentCount}</strong><span>24 小时内截止</span>
+    </button>
+    <button class="hero-stat" type="button" data-hero-filter="student">
+      <strong>${studentItems.length}</strong>
+      <span>学生自发${riskyCount ? ` · ${riskyCount} 条待核实` : ""}</span>
+    </button>`;
+}
+
 function closeModal() {
   $("modal").hidden = true;
 }
@@ -830,6 +859,7 @@ function bind() {
   $("clockToggle").addEventListener("click", () => {
     timeMode = timeMode === "live" ? "baseline" : "live";
     renderClock();
+    renderHero();
     renderFilters();
     renderList();
     renderDetail();
@@ -842,10 +872,26 @@ function bind() {
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden && timeMode === "live") {
       renderClock();
+      renderHero();
       renderFilters();
       renderList();
       renderDetail();
     }
+  });
+
+  // 首页那三个数字点下去就是筛选条件，并滚到信息板
+  $("heroStats").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-hero-filter]");
+    if (!btn) return;
+    state.source = "all";
+    state.status = "all";
+    const key = btn.dataset.heroFilter;
+    if (key === "student") state.source = "student";
+    else state.status = key;
+    selectSegment("all");
+    renderFilters();
+    renderList();
+    $("board").scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   document.addEventListener("keydown", (e) => {
@@ -863,6 +909,7 @@ store.load();
 bind();
 selectSegment("all");
 renderClock();
+renderHero();
 renderFilters();
 renderList();
 renderDetail();
