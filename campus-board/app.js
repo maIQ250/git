@@ -330,6 +330,7 @@ function filteredViews() {
 
   if (state.view === "saved") list = list.filter((v) => store.favorites.has(v.id));
   if (state.view === "mine") list = list.filter((v) => v.source.kind === "student" && v.mine);
+  if (state.view === "risk") list = list.filter((v) => v.trust === "low");
 
   if (state.source !== "all") list = list.filter((v) => sourceGroupOf(v) === state.source);
   if (state.category !== "all") list = list.filter((v) => (CATEGORY_OF_TYPE[v.type] ?? "其他") === state.category);
@@ -409,6 +410,7 @@ function renderList() {
     all: "没有匹配的信息，试着把筛选条件放宽一些。",
     saved: "还没有收藏。点信息右上角的书签图标就能存下来，刷新后依然在。",
     mine: "还没有发布过信息。点右上角「发布信息」就能发一条活动、约球或组队招募。",
+    risk: "目前没有被标为待核实的信息。",
   };
   const empty = $("empty");
   empty.hidden = list.length > 0;
@@ -620,8 +622,8 @@ function renderHero() {
     return s.key === "today" || s.key === "ongoing";
   }).length;
   const urgentCount = list.filter((v) => computeStatus(v, now).key === "urgent").length;
-  const studentItems = list.filter((v) => v.source.kind === "student");
-  const riskyCount = studentItems.filter((v) => v.trust === "low").length;
+  // 「待核实」= 内容缺失或带推广性质、需要自己判断的条目
+  const riskyCount = list.filter((v) => v.trust === "low").length;
 
   $("heroStats").innerHTML = `
     <button class="hero-stat" type="button" data-hero-filter="today">
@@ -630,9 +632,9 @@ function renderHero() {
     <button class="hero-stat" type="button" data-hero-filter="urgent">
       <strong>${urgentCount}</strong><span>24 小时内截止</span>
     </button>
-    <button class="hero-stat" type="button" data-hero-filter="student">
-      <strong>${studentItems.length}</strong>
-      <span>学生自发${riskyCount ? ` · ${riskyCount} 条待核实` : ""}</span>
+    <button class="hero-stat" type="button" data-hero-filter="risk">
+      <strong>${riskyCount}</strong>
+      <span>待核实</span>
     </button>`;
 }
 
@@ -740,7 +742,7 @@ function submitPublish(event) {
 
 /* ---------------- 事件绑定 ---------------- */
 
-const VIEW_LABEL = { all: "全部信息", saved: "我的收藏", mine: "我发布的" };
+const VIEW_LABEL = { all: "全部信息", saved: "我的收藏", mine: "我发布的", risk: "待核实的信息" };
 
 function selectSegment(view) {
   state.view = view;
@@ -886,9 +888,9 @@ function bind() {
     state.source = "all";
     state.status = "all";
     const key = btn.dataset.heroFilter;
-    if (key === "student") state.source = "student";
+    if (key === "risk") selectSegment("risk");
     else state.status = key;
-    selectSegment("all");
+    if (key !== "risk") selectSegment("all");
     renderFilters();
     renderList();
     $("board").scrollIntoView({ behavior: "smooth", block: "start" });
