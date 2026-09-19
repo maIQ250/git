@@ -14,14 +14,27 @@
 
 | 项目 | 目录 | 类型 | 状态 |
 | --- | --- | --- | --- |
+| 校园机会板 | `campus-board/` | 纯前端（HTML / CSS / JavaScript） | 已完成，已发布到仓库根地址 |
 | Todo List 待办清单 | `todo-list/` | 纯前端（HTML / CSS / JavaScript） | 已完成 |
 | 校园失物招领系统 | `lost-found/` | 前端 + Node.js 后端 | 阶段一、二已完成，阶段三未开始 |
 
 ---
 
-## 项目一：Todo List 待办清单
+## 项目零：校园机会板
 
 **在线体验**：<https://maIQ250.github.io/git/>
+
+面向在校学生、重点照顾新生使用体验的校园活动与机会信息板，使用考核题目提供的 26 条模拟信息。
+把「还来不来得及 / 这条信息变过没有 / 这条信息能不能信」三件事直接做成界面结论：
+状态由时间基准推算，补充通知合并成时间线，学生发布前先做一次信息体检。
+
+详见 [`campus-board/README.md`](campus-board/README.md)。
+
+---
+
+## 项目一：Todo List 待办清单
+
+**在线体验**：<https://maIQ250.github.io/git/todo-list/>
 （无需登录、无需安装，打开即用）
 
 ### 项目简介

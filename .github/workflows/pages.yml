@@ -1,15 +1,18 @@
-# 把 todo-list 目录发布到 GitHub Pages
+# 把仓库里的两个前端项目发布到 GitHub Pages
 #
-# 为什么用 Actions 而不是「分支配目录」：
-# GitHub Pages 的经典发布方式只支持仓库根目录 / 或 /docs 目录，
-# 而本仓库根目录放了两个项目（todo-list 和 lost-found），
-# 用 Actions 可以只把 todo-list 目录发布出去，不用把文件复制一份到 docs/。
-name: 部署 todo-list 到 GitHub Pages
+# 站点结构：
+#   /            校园机会板（本次考核作品，评委直接点开就是这个）
+#   /todo-list/  待办清单
+#
+# 为什么用 Actions：GitHub Pages 的静态托管只支持根目录或 /docs，
+# 而仓库里放了多个项目。用 Actions 可以在发布前把目录拼装成想要的站点结构。
+name: 部署前端项目到 GitHub Pages
 
 on:
   push:
     branches: [main]
     paths:
+      - "campus-board/**"
       - "todo-list/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
@@ -36,10 +39,17 @@ jobs:
       - name: 配置 Pages
         uses: actions/configure-pages@v5
 
-      - name: 打包 todo-list 目录
+      - name: 拼装站点目录
+        run: |
+          mkdir -p _site/todo-list
+          cp -r campus-board/. _site/
+          rm -rf _site/tests _site/README.md
+          cp -r todo-list/. _site/todo-list/
+
+      - name: 打包站点
         uses: actions/upload-pages-artifact@v3
         with:
-          path: todo-list
+          path: _site
 
       - name: 发布到 Pages
         id: deployment
