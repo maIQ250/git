@@ -78,7 +78,7 @@ test("状态由基准时刻算出，而不是写死", () => {
   assert.match(api.computeStatus(byId("05")).label, /^还剩 22 小时截止$/); // 9月20日12:00截止
   assert.match(api.computeStatus(byId("02")).label, /^今天 19:00 开始$/);   // 当天晚上的公开课
   assert.equal(api.computeStatus(byId("10")).key, "today");                // 15:00 那场
-  assert.equal(api.computeStatus(byId("17")).label, "提取信息 9月22日失效"); // 资料有失效时间
+  assert.equal(api.computeStatus(byId("17")).label, "提取信息 9月22日 周二失效"); // 资料有失效时间，日期带星期
   assert.equal(api.computeStatus(byId("16")).tone, "plain");               // 没写截止时间，不能假装随时可去
 });
 

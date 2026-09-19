@@ -1,5 +1,5 @@
 /**
- * 校园机会板 —— 应用逻辑
+ * 珠科雷达 —— 应用逻辑
  *
  * 三件事值得单独说明：
  *  1) 状态是算出来的，不是写死的。所有「还剩几小时 / 已截止 / 已结束」都以
@@ -51,13 +51,28 @@ function esc(value) {
 
 function pad(n) { return String(n).padStart(2, "0"); }
 
-/** 把绝对时间转成「9月21日 19:30」这类稳定展示文案 */
+const WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+/** 日期带星期：9月21日 周一。材料里「每周三/每周六」这类描述只有标了星期才能核对 */
+function fmtDate(value) {
+  const d = new Date(value);
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${WEEKDAYS[d.getDay()]}`;
+}
+
+/** 只取时刻，00:00 视为「只写了日期」 */
+function fmtTime(value) {
+  const d = new Date(value);
+  const t = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return t === "00:00" ? "" : t;
+}
+
+/** 完整时间：9月21日 周一 19:30 */
 function fmtDateTime(value) {
   if (!value) return "";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
-  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  return time === "00:00" ? `${d.getMonth() + 1}月${d.getDate()}日` : `${d.getMonth() + 1}月${d.getDate()}日 ${time}`;
+  const time = fmtTime(value);
+  return time ? `${fmtDate(value)} ${time}` : fmtDate(value);
 }
 
 /** 相对基准时刻的天数差，用于「今天 / 明天 / 后天」 */
@@ -74,7 +89,7 @@ function relDayLabel(value) {
   if (diff === 0) return "今天";
   if (diff === 1) return "明天";
   if (diff === 2) return "后天";
-  return `${new Date(value).getMonth() + 1}月${new Date(value).getDate()}日`;
+  return fmtDate(value);
 }
 
 /* ---------------- 数据整理 ---------------- */
@@ -344,7 +359,7 @@ function renderList() {
     const status = computeStatus(view);
     const saved = store.favorites.has(view.id);
     const topFlag = (view.flags ?? []).find((f) => f.level !== "info") ?? (view.flags ?? [])[0];
-    const when = view.eventStart ? `${relDayLabel(view.eventStart)} ${fmtDateTime(view.eventStart).split(" ")[1] ?? ""}`.trim() : null;
+    const when = view.eventStart ? `${relDayLabel(view.eventStart)} ${fmtTime(view.eventStart)}`.trim() : null;
     const place = view.location ?? (view.locationNote && view.locationNote !== "未提供" ? view.locationNote : null);
 
     return `
@@ -406,7 +421,7 @@ function renderDetail() {
   const facts = [
     view.eventStart && {
       label: "活动时间",
-      value: `${fmtDateTime(view.eventStart)}${view.eventEnd ? `—${fmtDateTime(view.eventEnd).split(" ").slice(-1)[0]}` : ""}`,
+      value: `${fmtDateTime(view.eventStart)}${view.eventEnd ? `—${fmtTime(view.eventEnd) || fmtDate(view.eventEnd)}` : ""}`,
       note: view.eventStartNote ?? (view.originalEventStart && view.originalEventStart !== view.eventStart
         ? `原计划 ${fmtDateTime(view.originalEventStart)}，已按补充通知更新` : null),
     },
