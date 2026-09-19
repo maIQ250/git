@@ -417,6 +417,7 @@ function renderList() {
     : "";
   $("savedCount").textContent = String(store.favorites.size);
   $("mineCount").textContent = String(store.published.length);
+  $("meCount").textContent = String(store.favorites.size + store.published.length);
 }
 
 /* ---------------- 渲染：详情 ---------------- */
@@ -710,14 +711,29 @@ function submitPublish(event) {
 
 /* ---------------- 事件绑定 ---------------- */
 
+const VIEW_LABEL = { all: "全部信息", saved: "我的收藏", mine: "我发布的" };
+
 function selectSegment(view) {
   state.view = view;
-  for (const [id, key] of [["viewAll", "all"], ["viewSaved", "saved"], ["viewMine", "mine"]]) {
-    const el = $(id);
-    const active = key === view;
-    el.classList.toggle("is-active", active);
-    el.setAttribute("aria-selected", String(active));
-  }
+  document.querySelectorAll("[data-view-target]").forEach((el) => {
+    el.classList.toggle("is-active", el.dataset.viewTarget === view);
+  });
+  const bar = $("viewBar");
+  bar.hidden = view === "all";
+  $("viewBarLabel").textContent = VIEW_LABEL[view] ?? "";
+}
+
+function openDrawer() {
+  $("drawer").hidden = false;
+  $("meBtn").setAttribute("aria-expanded", "true");
+  document.body.style.overflow = "hidden";
+  $("drawerPublish").focus();
+}
+
+function closeDrawer() {
+  $("drawer").hidden = true;
+  $("meBtn").setAttribute("aria-expanded", "false");
+  document.body.style.overflow = "";
 }
 
 function bind() {
@@ -731,9 +747,26 @@ function bind() {
     renderList();
   });
 
-  $("viewAll").addEventListener("click", () => { selectSegment("all"); renderList(); });
-  $("viewSaved").addEventListener("click", () => { selectSegment("saved"); renderList(); });
-  $("viewMine").addEventListener("click", () => { selectSegment("mine"); renderList(); });
+  $("meBtn").addEventListener("click", openDrawer);
+  document.querySelectorAll("[data-drawer-close]").forEach((el) => el.addEventListener("click", closeDrawer));
+
+  $("drawer").addEventListener("click", (e) => {
+    const target = e.target.closest("[data-view-target]");
+    if (!target) return;
+    selectSegment(target.dataset.viewTarget);
+    closeDrawer();
+    renderList();
+  });
+
+  $("drawerPublish").addEventListener("click", () => {
+    closeDrawer();
+    openModal();
+  });
+
+  $("viewBarReset").addEventListener("click", () => {
+    selectSegment("all");
+    renderList();
+  });
 
   document.querySelectorAll(".filters").forEach((root) => {
     root.addEventListener("click", (e) => {
@@ -817,7 +850,8 @@ function bind() {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if (!$("modal").hidden) closeModal();
+      if (!$("drawer").hidden) closeDrawer();
+      else if (!$("modal").hidden) closeModal();
       else if (state.selectedId) { state.selectedId = null; renderList(); renderDetail(); }
     }
   });
@@ -827,6 +861,7 @@ function bind() {
 
 store.load();
 bind();
+selectSegment("all");
 renderClock();
 renderFilters();
 renderList();
