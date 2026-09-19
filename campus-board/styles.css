@@ -285,6 +285,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .badge-official { background: var(--ok-soft); color: var(--accent-strong); }
 .badge-student { background: #eef3fb; color: #32587f; }
 .badge-low { background: var(--danger-soft); color: var(--danger); }
+/* 审核状态：与「待核实」(badge-low) 区分开 */
+.badge-audit-pending { background: var(--warn-soft); color: var(--warn); }
+.badge-audit-published { background: var(--ok-soft); color: var(--accent-strong); }
+.badge-audit-rejected { background: var(--danger-soft); color: var(--danger); }
 
 .pill {
   display: inline-flex; align-items: center; gap: 5px;

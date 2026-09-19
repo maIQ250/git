@@ -35,7 +35,8 @@ const context = {
 vm.createContext(context);
 vm.runInContext(`${dataSource}\n${appSource}\nglobalThis.__api = {
   RAW_ITEMS, REFERENCE_NOW, buildViews, computeStatus, sourceGroupOf,
-  CATEGORY_OF_TYPE, SOURCE_LABEL, RISKY_WORDS, state, store, fmtClock, fmtDateTime
+  CATEGORY_OF_TYPE, SOURCE_LABEL, RISKY_WORDS, state, store, fmtClock, fmtDateTime,
+  activeViews, myViews, auditInfo
 };`, context);
 
 const api = context.__api;
@@ -136,6 +137,38 @@ test("改用真实时间后，状态跟着时间走而不是写死", () => {
 test("日期一律带星期，材料里的「每周三/每周六」才核对得出来", () => {
   assert.equal(api.fmtDateTime("2026-09-21T19:30"), "9月21日 周一 19:30");
   assert.equal(api.fmtDateTime("2026-09-20T14:30"), "9月20日 周日 14:30");
+});
+
+test("待审核的信息不进入公开信息流，但自己看得到", () => {
+  const before = api.activeViews().length;
+  api.store.published = [{
+    id: "P0001", title: "测试用信息", type: "约球", summary: "测试",
+    source: { kind: "student", name: "学生个人发布" }, trust: "medium", mine: true,
+    status: "pending", eventStart: null, deadline: null, location: null,
+    locationNote: "未填写", deadlineNote: "未注明", audience: "不限",
+    requirements: [], tags: [], flags: [],
+  }];
+  assert.equal(api.activeViews().length, before, "待审核不该出现在公开列表");
+  assert.equal(api.myViews().length, 1, "我发布的应该能看到待审核的提交");
+  assert.equal(api.auditInfo(api.myViews()[0].status).label, "待审核");
+});
+
+test("审核通过后进入公开信息流，驳回后不会进入", () => {
+  const before = api.activeViews().length;
+  api.store.published[0].status = "published";
+  assert.equal(api.activeViews().length, before + 1, "通过后应进入公开列表");
+  api.store.published[0].status = "rejected";
+  assert.equal(api.activeViews().length, before, "驳回后不该进入公开列表");
+  assert.equal(api.auditInfo(api.store.published[0].status).label, "已驳回");
+  api.store.published = [];
+});
+
+test("「待审核」与「待核实」是两件事", () => {
+  const lowTrust = api.buildViews([]).filter((v) => v.trust === "low");
+  assert.ok(lowTrust.length > 0, "26 条材料里本来就有待核实的信息");
+  assert.equal(api.auditInfo("pending").label, "待审核");
+  assert.equal(api.auditInfo("published").label, "已发布");
+  assert.equal(api.auditInfo(undefined).label, "已发布", "没有审核字段的历史数据按已发布处理");
 });
 test("所有 26 条的来源与类型都能映射到界面上的分类", () => {
   for (const item of api.RAW_ITEMS) {

@@ -221,6 +221,25 @@ function sourceGroupOf(view) {
   return "unknown";
 }
 
+/* 审核状态：pending 待审核 / published 已发布 / rejected 已驳回。
+   注意与「待核实」(trust === "low") 区分：待核实是已公开但内容需要留意，
+   待审核是还没进入公开信息流。两者互不影响。 */
+const AUDIT = {
+  pending: { label: "待审核", cls: "badge-audit-pending" },
+  published: { label: "已发布", cls: "badge-audit-published" },
+  rejected: { label: "已驳回", cls: "badge-audit-rejected" },
+};
+
+function auditInfo(status) {
+  return AUDIT[status ?? "published"] ?? AUDIT.published;
+}
+
+function auditNote(status) {
+  if (status === "pending") return "已提交，等待管理端审核，尚未进入公开信息流";
+  if (status === "rejected") return "未通过审核，不会出现在公开信息流里";
+  return "已通过审核，正常展示在公开信息流里";
+}
+
 function searchIndex(view) {
   return [
     view.title, view.summary, view.location, view.locationNote, view.source.name,
@@ -276,7 +295,13 @@ let views = [];
 /* ---------------- 渲染：筛选条 ---------------- */
 
 function activeViews() {
-  return buildViews(store.published);
+  // 只有审核通过的才进入公开信息流；早期数据没有 status 字段，按已发布处理
+  return buildViews(store.published.filter((item) => (item.status ?? "published") === "published"));
+}
+
+/** 「我发布的」需要看得到自己全部提交，包括待审核和已驳回 */
+function myViews() {
+  return buildViews(store.published).filter((v) => v.mine);
 }
 
 function countBy(predicate) {
@@ -326,7 +351,7 @@ function renderFilters() {
 /* ---------------- 渲染：列表 ---------------- */
 
 function filteredViews() {
-  let list = activeViews();
+  let list = state.view === "mine" ? myViews() : activeViews();
 
   if (state.view === "saved") list = list.filter((v) => store.favorites.has(v.id));
   if (state.view === "mine") list = list.filter((v) => v.source.kind === "student" && v.mine);
@@ -392,7 +417,7 @@ function renderList() {
             <span class="badge ${view.source.kind === "student" ? (view.trust === "low" ? "badge-low" : "badge-student") : "badge-official"}">
               ${esc(SOURCE_LABEL[view.source.kind])}
             </span>
-            ${view.mine ? '<span class="badge">我发布的</span>' : ""}
+            ${view.mine ? `<span class="badge ${auditInfo(view.status).cls}">${esc(auditInfo(view.status).label)}</span>` : ""}
           </div>
           <h2 class="item-title">${esc(view.title)}</h2>
         </div>
@@ -409,7 +434,7 @@ function renderList() {
   const emptyMessages = {
     all: "没有匹配的信息，试着把筛选条件放宽一些。",
     saved: "还没有收藏。点信息右上角的书签图标就能存下来，刷新后依然在。",
-    mine: "还没有发布过信息。点右上角「发布信息」就能发一条活动、约球或组队招募。",
+    mine: "还没有发布过信息。点「发布信息」就能发一条活动、约球或组队招募；提交后先进入待审核，管理端通过才会公开。",
     risk: "目前没有被标为待核实的信息。",
   };
   const empty = $("empty");
@@ -426,7 +451,7 @@ function renderList() {
 /* ---------------- 渲染：详情 ---------------- */
 
 function renderDetail() {
-  const view = activeViews().find((v) => v.id === state.selectedId);
+  const view = (state.view === "mine" ? myViews() : activeViews()).find((v) => v.id === state.selectedId);
   const body = $("detailBody");
 
   if (!view) {
@@ -451,6 +476,7 @@ function renderDetail() {
     view.capacity && { label: "人数", value: view.capacity },
     { label: "费用", value: view.cost ?? "未提供" },
     { label: "来源", value: view.source.name },
+    view.mine && { label: "审核状态", value: auditInfo(view.status).label, note: auditNote(view.status) },
   ].filter(Boolean);
 
   const timeline = [
@@ -566,7 +592,7 @@ function toast(message) {
 }
 
 function copySummary(id) {
-  const view = activeViews().find((v) => v.id === id);
+  const view = (state.view === "mine" ? myViews() : activeViews()).find((v) => v.id === id);
   if (!view) return;
   const text = [
     view.title,
@@ -725,19 +751,19 @@ function submitPublish(event) {
     requirements: [`联系方式：${contact}`],
     tags: ["学生发起"],
     flags,
+    status: "pending", // 先进入待审核，管理端通过后才进入公开信息流
   });
   store.save();
 
   $("publishForm").reset();
   closeModal();
-  state.view = "all";
-  selectSegment("all");
+  selectSegment("mine");
   renderFilters();
   renderList();
   state.selectedId = id;
   renderList();
   renderDetail();
-  toast("已发布到信息板，刷新后仍然在「我发布的」里");
+  toast("已提交，等待管理端审核；可在「我发布的」查看状态");
 }
 
 /* ---------------- 事件绑定 ---------------- */

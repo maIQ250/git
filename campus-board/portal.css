@@ -1,0 +1,89 @@
+/* 珠科雷达 · 主入口页样式
+   独立于学生端的 styles.css，避免入口页的改动影响已经验证过的信息板。 */
+
+:root {
+  --red: #b3123a;
+  --red-soft: #fdeef2;
+  --blue: #1b4fa8;
+  --blue-soft: #eef3fd;
+  --ink: #1a1d22;
+  --ink-2: #4a5058;
+  --muted: #7c848e;
+  --line: #e6e9ed;
+  --font: "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+          "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body.portal {
+  margin: 0; min-height: 100vh;
+  font-family: var(--font); color: var(--ink);
+  background: #fff;
+  display: grid; place-items: center;
+  padding: 40px 28px;
+}
+
+.portal-shell {
+  width: min(1180px, 100%);
+  display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
+  gap: 48px; align-items: center;
+}
+
+.portal-visual { border-radius: 18px; overflow: hidden; box-shadow: 0 24px 60px -32px rgba(20, 25, 32, .45); }
+.portal-visual img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+.portal-main { display: grid; gap: 26px; }
+
+.portal-logo { width: 260px; max-width: 70%; height: auto; display: block; }
+.portal-brand h1 {
+  margin: 18px 0 0; font-size: clamp(40px, 5.2vw, 62px); font-weight: 700;
+  letter-spacing: -.5px; line-height: 1.08;
+}
+.portal-claim { margin: 14px 0 0; font-size: clamp(15px, 1.5vw, 19px); color: var(--ink-2); }
+.portal-sub { margin: 10px 0 0; font-size: 14px; color: var(--muted); letter-spacing: .5px; }
+
+.portal-entries { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.entry {
+  display: grid; gap: 7px; justify-items: center; text-align: center;
+  padding: 24px 18px 20px; border-radius: 16px; text-decoration: none;
+  border: 1px solid var(--line); color: inherit;
+  transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+}
+.entry:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -24px rgba(20, 25, 32, .5); }
+.entry-student { background: var(--red-soft); border-color: #f6d6de; color: var(--red); }
+.entry-admin { background: var(--blue-soft); border-color: #d8e3f7; color: var(--blue); }
+.entry-name { font-size: 21px; font-weight: 700; color: currentColor; }
+.entry-desc { font-size: 12.5px; color: var(--muted); }
+.entry-btn {
+  margin-top: 6px; padding: 9px 26px; border-radius: 999px;
+  background: currentColor; font-size: 14.5px; font-weight: 600;
+}
+.entry-btn { color: #fff; }
+.entry-student .entry-btn { background: var(--red); }
+.entry-admin .entry-btn { background: var(--blue); }
+
+.portal-note { font-size: 12.5px; color: var(--muted); text-align: center; }
+.portal-footer {
+  font-size: 12.5px; color: var(--muted); text-align: center;
+  padding-top: 16px; border-top: 1px solid var(--line);
+}
+
+@media (max-width: 900px) {
+  body.portal { padding: 24px 18px 32px; place-items: start center; }
+  .portal-shell { grid-template-columns: 1fr; gap: 26px; }
+  .portal-visual { order: 2; max-height: 240px; }
+  .portal-visual img { max-height: 240px; }
+  .portal-brand h1 { margin-top: 14px; }
+  .portal-logo { width: 210px; }
+}
+
+@media (max-width: 460px) {
+  .portal-entries { grid-template-columns: 1fr; }
+  .entry { padding: 18px 14px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
