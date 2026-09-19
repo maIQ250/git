@@ -3,7 +3,7 @@
  *
  * 三件事值得单独说明：
  *  1) 状态是算出来的，不是写死的。所有「还剩几小时 / 已截止 / 已结束」都以
- *     REFERENCE_NOW（考核基准 9月19日14:00）为唯一时间源推算。
+ *     时间源推算，默认就是 REFERENCE_NOW（考核基准 9月19日14:00）。
  *  2) 补充通知会被合并进主信息（01←09、03←20），列表里只出现一条，
  *     详情里用时间线展示「改了什么」，避免同一条信息重复刷屏。
  *  3) 学生发布的信息要先进一遍「信息体检」：缺时间、缺地点、留私人联系方式、
@@ -14,6 +14,14 @@ const REF_NOW = Date.parse(REFERENCE_NOW);
 const HOUR = 3600 * 1000;
 const DAY = 24 * HOUR;
 const STORE_KEY = "campus-board.v1";
+
+/**
+ * 时间来源。默认永远用考核基准（9月19日 14:00），保证评审时状态可复现；
+ * 用户手动点「使用当前时间」才改用真实时间。没有定时器，不做每秒刷新，
+ * 只在切换、重新打开页面、或者从别的标签页切回来时重新计算。
+ */
+let timeMode = "baseline"; // baseline | live
+const nowMs = () => (timeMode === "live" ? Date.now() : REF_NOW);
 
 const CATEGORY_OF_TYPE = {
   "竞赛训练": "竞赛与训练",
@@ -75,17 +83,17 @@ function fmtDateTime(value) {
   return time ? `${fmtDate(value)} ${time}` : fmtDate(value);
 }
 
-/** 相对基准时刻的天数差，用于「今天 / 明天 / 后天」 */
-function dayDiff(value) {
+/** 相对当前时间源的天数差，用于「今天 / 明天 / 后天」 */
+function dayDiff(value, now = nowMs()) {
   const target = new Date(value);
-  const base = new Date(REF_NOW);
+  const base = new Date(now);
   const t = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
   const b = new Date(base.getFullYear(), base.getMonth(), base.getDate()).getTime();
   return Math.round((t - b) / DAY);
 }
 
-function relDayLabel(value) {
-  const diff = dayDiff(value);
+function relDayLabel(value, now = nowMs()) {
+  const diff = dayDiff(value, now);
   if (diff === 0) return "今天";
   if (diff === 1) return "明天";
   if (diff === 2) return "后天";
@@ -136,15 +144,41 @@ function buildViews(published) {
  * 统一状态机。返回 { key, label, tone, rank, sortAt }
  * tone：urgent | soon | today | open | done | plain
  */
-function computeStatus(view) {
+function computeStatus(view, now = nowMs()) {
   const deadline = view.deadline ? Date.parse(view.deadline) : null;
   const start = view.eventStart ? Date.parse(view.eventStart) : null;
   const end = view.eventEnd ? Date.parse(view.eventEnd) : null;
 
-  if (view.statedStatus === "ended" || (end && end < REF_NOW)) {
+  if (view.statedStatus === "ended" || (end && end < now)) {
     return { key: "done", label: "已结束", tone: "done", rank: 4, sortAt: end ?? start ?? 0 };
   }
-  if (deadline && deadline < REF_NOW) {
+  // 优先级：先告诉用户「此刻还能做什么」，再看活动本身的状态。
+  // 报名通道还开着，就算训练已经开始，最该突出的也是「还能报名」。
+  const isResource = view.type === "学习资料";
+  if (deadline && deadline >= now) {
+    if (deadline - now <= DAY) {
+      const hours = Math.max(1, Math.round((deadline - now) / HOUR));
+      return {
+        key: "urgent",
+        label: isResource ? `提取信息还剩 ${hours} 小时有效` : `还剩 ${hours} 小时截止`,
+        tone: "urgent", rank: 0, sortAt: deadline,
+      };
+    }
+    if (deadline - now <= 3 * DAY) {
+      const days = Math.max(1, Math.round((deadline - now) / DAY));
+      return {
+        key: "soon",
+        label: isResource ? `提取信息还剩 ${days} 天有效` : `还剩 ${days} 天截止`,
+        tone: "soon", rank: 1, sortAt: deadline,
+      };
+    }
+    return {
+      key: "open",
+      label: isResource ? `提取信息 ${relDayLabel(deadline, now)}失效` : `还能报名 · ${relDayLabel(deadline, now)}截止`,
+      tone: "open", rank: 3, sortAt: deadline,
+    };
+  }
+  if (deadline && deadline < now) {
     const waitlist = /候补/.test(view.deadlineNote ?? "") || (view.flags ?? []).some((f) => /候补/.test(f.text));
     return {
       key: "closed",
@@ -154,41 +188,22 @@ function computeStatus(view) {
       sortAt: deadline,
     };
   }
-  if (deadline && deadline - REF_NOW <= DAY) {
-    const hours = Math.max(1, Math.round((deadline - REF_NOW) / HOUR));
-    const isResource = view.type === "学习资料";
-    return {
-      key: "urgent",
-      label: isResource ? `提取信息还剩 ${hours} 小时有效` : `还剩 ${hours} 小时截止`,
-      tone: "urgent", rank: 0, sortAt: deadline,
-    };
+  // 没有报名截止时间，就按活动是否已经开始判断
+  if (start && start <= now) {
+    if (end) {
+      return { key: "ongoing", label: "进行中", tone: "today", rank: 1, sortAt: end };
+    }
+    return { key: "ongoing", label: "已开始 · 材料未注明结束时间", tone: "plain", rank: 4, sortAt: start };
   }
-  if (deadline && deadline - REF_NOW <= 3 * DAY) {
-    const days = Math.max(1, Math.round((deadline - REF_NOW) / DAY));
-    const isResource = view.type === "学习资料";
-    return {
-      key: "soon",
-      label: isResource ? `提取信息还剩 ${days} 天有效` : `还剩 ${days} 天截止`,
-      tone: "soon", rank: 1, sortAt: deadline,
-    };
-  }
-  if (start && start >= REF_NOW && dayDiff(start) === 0) {
+  if (start && start >= now && dayDiff(start, now) === 0) {
     return {
       key: "today",
       label: `今天 ${pad(new Date(start).getHours())}:${pad(new Date(start).getMinutes())} 开始`,
       tone: "today", rank: 1, sortAt: start,
     };
   }
-  if (start && start >= REF_NOW) {
-    return { key: "open", label: `${relDayLabel(start)}开始`, tone: "open", rank: 3, sortAt: start };
-  }
-  if (deadline) {
-    const isResource = view.type === "学习资料";
-    return {
-      key: "open",
-      label: isResource ? `提取信息 ${relDayLabel(deadline)}失效` : `还能报名 · ${relDayLabel(deadline)}截止`,
-      tone: "open", rank: 3, sortAt: deadline,
-    };
+  if (start && start >= now) {
+    return { key: "open", label: `${relDayLabel(start, now)}开始`, tone: "open", rank: 3, sortAt: start };
   }
   // 没有截止时间的三类情况分开处理，避免把「还没定」说成「随时可去」
   if (/无需报名|无需提前报名/.test(view.deadlineNote ?? "")) {
@@ -574,6 +589,23 @@ function openModal() {
   runFormCheck();
 }
 
+/** 把时间源显示成「2026年9月19日（周六）14:00」 */
+function fmtClock(ms) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${WEEKDAYS[d.getDay()]}）${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function renderClock() {
+  const live = timeMode === "live";
+  const ms = nowMs();
+  $("clockMode").textContent = live ? "当前时间" : "数据基准";
+  $("clockLabel").textContent = fmtClock(ms);
+  $("clockToggle").textContent = live ? "↺ 回到数据基准" : "↻ 使用当前时间";
+  $("clockToggle").setAttribute("aria-pressed", String(live));
+  // 真实时间和材料时间差得太远时提示一句，避免「怎么全是已结束」的困惑
+  $("clockNotice").hidden = !(live && Math.abs(ms - REF_NOW) > DAY);
+}
+
 function closeModal() {
   $("modal").hidden = true;
 }
@@ -762,6 +794,27 @@ function bind() {
   $("publishForm").addEventListener("input", runFormCheck);
   $("publishForm").addEventListener("submit", submitPublish);
 
+  $("clockToggle").addEventListener("click", () => {
+    timeMode = timeMode === "live" ? "baseline" : "live";
+    renderClock();
+    renderFilters();
+    renderList();
+    renderDetail();
+    toast(timeMode === "live"
+      ? "已改用当前时间计算，状态会随之变化"
+      : "已回到数据基准 9月19日 14:00");
+  });
+
+  // 从别的标签页切回来时，如果是「当前时间」模式就顺手刷新一次，不设定时器
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && timeMode === "live") {
+      renderClock();
+      renderFilters();
+      renderList();
+      renderDetail();
+    }
+  });
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (!$("modal").hidden) closeModal();
@@ -774,6 +827,7 @@ function bind() {
 
 store.load();
 bind();
+renderClock();
 renderFilters();
 renderList();
 renderDetail();

@@ -35,7 +35,7 @@ const context = {
 vm.createContext(context);
 vm.runInContext(`${dataSource}\n${appSource}\nglobalThis.__api = {
   RAW_ITEMS, REFERENCE_NOW, buildViews, computeStatus, sourceGroupOf,
-  CATEGORY_OF_TYPE, SOURCE_LABEL, RISKY_WORDS, state, store
+  CATEGORY_OF_TYPE, SOURCE_LABEL, RISKY_WORDS, state, store, fmtClock, fmtDateTime
 };`, context);
 
 const api = context.__api;
@@ -116,6 +116,27 @@ test("发布体检能识别「日结 + 私人微信」这类高风险表述", ()
   assert.equal(hits.length, 2);
 });
 
+test("时间源默认锁定在考核基准，评审时状态可复现", () => {
+  // 不传第二个参数时一律按 9月19日 14:00 计算
+  assert.equal(api.computeStatus(byId("10")).label, "今天 15:00 开始");
+  assert.equal(api.fmtClock(Date.parse(api.REFERENCE_NOW)), "2026年9月19日（周六）14:00");
+});
+
+test("改用真实时间后，状态跟着时间走而不是写死", () => {
+  const duringClass = Date.parse("2026-09-19T19:30:00+08:00");
+  assert.equal(api.computeStatus(byId("02"), duringClass).label, "进行中");
+
+  const twoDaysLater = Date.parse("2026-09-21T20:00:00+08:00");
+  assert.equal(api.computeStatus(byId("05"), twoDaysLater).label, "报名已截止");
+  assert.match(api.computeStatus(byId("01"), twoDaysLater).label, /^还能报名/);
+  assert.equal(api.computeStatus(byId("26"), twoDaysLater).label, "已开始 · 材料未注明结束时间");
+  assert.equal(api.computeStatus(byId("19"), twoDaysLater).label, "报名已截止 · 可候补");
+});
+
+test("日期一律带星期，材料里的「每周三/每周六」才核对得出来", () => {
+  assert.equal(api.fmtDateTime("2026-09-21T19:30"), "9月21日 周一 19:30");
+  assert.equal(api.fmtDateTime("2026-09-20T14:30"), "9月20日 周日 14:30");
+});
 test("所有 26 条的来源与类型都能映射到界面上的分类", () => {
   for (const item of api.RAW_ITEMS) {
     assert.ok(api.SOURCE_LABEL[item.source.kind], `${item.id} 的来源类型未映射`);
