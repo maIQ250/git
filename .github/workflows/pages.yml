@@ -1,0 +1,46 @@
+# 把 todo-list 目录发布到 GitHub Pages
+#
+# 为什么用 Actions 而不是「分支配目录」：
+# GitHub Pages 的经典发布方式只支持仓库根目录 / 或 /docs 目录，
+# 而本仓库根目录放了两个项目（todo-list 和 lost-found），
+# 用 Actions 可以只把 todo-list 目录发布出去，不用把文件复制一份到 docs/。
+name: 部署 todo-list 到 GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "todo-list/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 取出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 打包 todo-list 目录
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: todo-list
+
+      - name: 发布到 Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
